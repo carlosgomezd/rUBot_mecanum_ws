@@ -20,9 +20,9 @@ def odom_callback(data):
     data.pose.pose.orientation.z,data.pose.pose.orientation.w]
     (roll, pitch, yaw)=euler_from_quaternion(q)
     robot_f = math.degrees(yaw)
-    #rospy.loginfo("Robot Odometry x= %f\n",robot_x)
-    #rospy.loginfo("Robot Odometry y= %f\n",robot_y)
-    #rospy.loginfo("Robot Odometry yaw= %.0f\n",math.degrees(yaw))
+    rospy.loginfo("Robot Odometry x= %f\n",robot_x)
+    rospy.loginfo("Robot Odometry y= %f\n",robot_y)
+    rospy.loginfo("Robot Odometry yaw= %.0f\n",math.degrees(yaw))
 
 def move_rubot(lin_velx,lin_vely,ang_vel,time_duration):
     global robot_x
@@ -48,7 +48,7 @@ def move_rubot(lin_velx,lin_vely,ang_vel,time_duration):
         if (duration_s <= time_duration):
             rospy.loginfo("Robot running")
             rospy.loginfo("Duration_s= "+str(duration_s))
-            #rospy.loginfo("Linear Vel_x = %f: Linear Vel_y = %f: Angular Vel = %f",lin_velx,lin_vely,ang_vel)
+            rospy.loginfo("Linear Vel_x = %f: Linear Vel_y = %f: Angular Vel = %f",lin_velx,lin_vely,ang_vel)
             vel.linear.x = lin_velx
             vel.linear.y = lin_vely
             vel.angular.z = ang_vel

@@ -1,13 +1,51 @@
 <launch>
- <!-- Navigation Program   -->
-    <arg name="v" default="0.2"/>
-    <arg name="w" default="0.4"/>
-    <arg name="td" default="2"/>
-    <arg name="path" default="Square"/>
-  <node name="rubot_nav" pkg="rubot_control" type="rubot_path_nav.py" output="screen" >
-    <param name="v" value="$(arg v)"/>
-    <param name="w" value="$(arg w)"/>
-    <param name="td" value="$(arg td)"/>
-    <param name="path" value="$(arg path)"/>
+  <arg name="v_square" default="0.2"/>
+  <arg name="w_square" default="0"/>
+  <arg name="td_square" default="2"/>
+  <arg name="path_square" default="Square"/>
+
+  <arg name="v_triangular" default="0.2"/>
+  <arg name="w_triangular" default="0"/>
+  <arg name="td_triangular" default="2"/>
+  <arg name="path_triangular" default="Triangular"/>
+
+  <arg name="v_rombe" default="0.2"/>
+  <arg name="w_rombe" default="0"/>
+  <arg name="td_rombe" default="2"/>
+  <arg name="path_rombe" default="Rombe"/>
+
+  <arg name="v_star" default="0.2"/>
+  <arg name="w_star" default="0"/>
+  <arg name="td_star" default="2"/>
+  <arg name="path_star" default="Star"/>
+
+  <node name="rubot_nav_square" pkg="rubot_control" type="rubot_path_nav.py" output="screen" >
+      <param name="v" value="$(arg v_square)"/>
+      <param name="w" value="$(arg w_square)"/>
+      <param name="td" value="$(arg td_square)"/>
+      <param name="path" value="$(arg path_square)"/>
+      <param name="~vx" value="0.2"/>
   </node>
+
+  <node name="rubot_nav_triangular" pkg="rubot_control" type="rubot_path_nav.py" output="screen">
+    <param name="v" value="$(arg v_triangular)"/>
+    <param name="w" value="$(arg w_triangular)"/>
+    <param name="td" value="$(arg td_triangular)"/>
+    <param name="path" value="$(arg path_triangular)"/>
+  </node>
+
+  <node name="rubot_nav_rombe" pkg="rubot_control" type="rubot_path_nav.py" output="screen">
+    <param name="v" value="$(arg v_rombe)"/>
+    <param name="w" value="$(arg w_rombe)"/>
+    <param name="td" value="$(arg td_rombe)"/>
+    <param name="path" value="$(arg path_rombe)"/>
+  </node>
+
+  <node name="rubot_nav_star" pkg="rubot_control" type="rubot_path_nav.py" output="screen">
+    <param name="v" value="$(arg v_star)"/>
+    <param name="w" value="$(arg w_star)"/>
+    <param name="td" value="$(arg td_star)"/>
+    <param name="path" value="$(arg path_star)"/>
+  </node>
+
 </launch>
