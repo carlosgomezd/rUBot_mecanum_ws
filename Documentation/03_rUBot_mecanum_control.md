@@ -70,6 +70,7 @@ In the **Inverse Kinematics** we want to apply a robot movement defined by:
 
 This is defined by the following expressions:
 ![](./Images/03_Control/04_mecanum_ikine.png)
+
 To obtain the **Odometry** we use the information of (uf,ul,w) and Gazebo plugin calculates the POSE of our robot.
 
 The analytical expressions are explained graphically in the picture:
@@ -143,7 +144,53 @@ roslaunch rubot_mecanum_description rubot_bringup_hw_rock_custom.launch
 ```
 ![](./Images/03_Control/08_bringup.png)
 
-Verify the previous node created to publish a Twist message to the /cmd_vel topic:
+#### **a) Keyboard control**
+You can control the rUBot with the keyboard installing the following packages:
+```shell
+sudo apt-get install ros-noetic-teleop-tools
+sudo apt-get install ros-noetic-teleop-twist-keyboard
+```
+
+Then you will be able to control the robot with the Keyboard typing:
+```shell
+rosrun key_teleop key_teleop.py /key_vel:=/cmd_vel
+or
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+```
+
+#### **b) Joy control**
+You can control the rUBot with the Joypad following the instructions in: 
+https://dev.to/admantium/radu-control-the-robot-using-a-joystick-976
+
+- In order to work with any gamepad, we need to install additional ROS packages:
+```shell
+sudo apt-get install ros-noetic-teleop-twist-joy ros-noetic-joy
+```
+- These packages provide several ways to interact with a connected joypad. To get started, we will run a ROS node called joy_node with the parameter of the detected device file.
+```shell
+rosrun joy joy_node dev:=/dev/input/js0
+```
+- to translate the messages from the /joy topic to TWIST messages, another ROS package already performs this translation. We just need to start the teleop_twist_joynode:
+```shell
+rosrun teleop_twist_joy teleop_node 
+```
+- connect the gamepad and select the Mode2 (green and red leds)
+- Subscribe to the topic /cmd_vel. Then, on your gamepad, identify the deadman switch button (in our gamepad is the triangle button) and you should see messages published on /cmd_vel topic.
+- You can see that this enable a non-holonomic movement
+- To enable the **holonomic movement**, you have to configure the proper parameters. 
+- An exemple is created to start the 2 nodes with the proper configuration parameters. This is the **rubot_joy.launch** file.
+
+```shell
+roslaunch rubot_control rubot_joy.launch
+```
+> For button mapping documentation refer to: http://wiki.ros.org/joy or http://wiki.ros.org/ps3joy
+> for detailed configuration of launch file refer to: https://github.com/ros-teleop/teleop_twist_joy/blob/indigo-devel/launch/teleop.launch
+
+Cool! If you have made the bringup of your robot, you will automatically feed these messages to your robot, and you can start moving around, controlled with a gamepad.
+
+
+#### **c) Python programming control**
+In the previous session we have created a python node to publish a Twist message in /cmd_vel topic. Verify the previous rubot_nav.launch file created for this purpose:
 ``` shell
 roslaunch rubot_control rubot_nav.launch
 ```
