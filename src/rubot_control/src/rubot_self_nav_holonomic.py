@@ -1,64 +1,101 @@
 #!/usr/bin/env python3
 
 import rospy
+import sys
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 
-class rUBotHolonomic:
-    def __init__(self):
-        rospy.init_node("rubot_holonomic_nav", anonymous=False)
-        self.distance_laser = rospy.get_param("~distance_laser")
-        self.speed_factor = rospy.get_param("~speed_factor")
-        self.forward_speed = rospy.get_param("~forward_speed")
-        self.backward_speed = rospy.get_param("~backward_speed")
-        self.rotation_speed = rospy.get_param("~rotation_speed") * 0.5  # Aplicar reducción aquí
-        self.sideways_speed = rospy.get_param("~sideways_speed")
 
-        self.msg = Twist()
-        self.cmd_vel_publisher = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
-        rospy.Subscriber("/scan", LaserScan, self.callback_laser)
+class rUBot:
+
+    def __init__(self):
+
+        rospy.init_node("rubot_nav", anonymous=False)
+        self._distanceLaser = rospy.get_param("~distance_laser")
+        self._speedFactor = rospy.get_param("~speed_factor")
+        self._forwardSpeed = rospy.get_param("~forward_speed")
+        self._backwardSpeed = rospy.get_param("~backward_speed")
+        self._rotationSpeed = rospy.get_param("~rotation_speed")
+
+        self._msg = Twist()
+        self._cmdVel = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
+        rospy.Subscriber("/scan", LaserScan, self.callbackLaser)
         rospy.on_shutdown(self.shutdown)
 
-        self.rate = rospy.Rate(10)
+        self._r = rospy.Rate(25)
+        
+        # Propiedades secundarias
+
+        # Our Lidar has more than 720 laser beams and not all the Lidars have the same number
+        # Se debe de calcular en la primera ejecucion de __callbackLaser(). Esta
+        # variable sirve para asegurar que solo se ejecuta este calculo del
+        # factor de correccion una sola vez.
+        #self.__isScanRangesLengthCorrectionFactorCalculated = False
+        #self.__scanRangesLengthCorrectionFactor = 2
 
     def start(self):
+
         while not rospy.is_shutdown():
-            self.cmd_vel_publisher.publish(self.msg)
-            self.rate.sleep()
+            self._cmdVel.publish(self._msg)
+            self._r.sleep()
 
-    def callback_laser(self, scan):
-        front_scan = min(min(scan.ranges[0:30]), min(scan.ranges[-30:]))
-        right_scan = min(scan.ranges[31:90])
-        left_scan = min(scan.ranges[-90:-31])
+    def callbackLaser(self, scan):
+        """Funcion ejecutada cada vez que se recibe un mensaje en /scan."""
+        # En la primera ejecucion, calculamos el factor de correcion del Lidar
+                
+        closestDistance, elementIndex = min((val, idx) for (idx, val) in enumerate(scan.ranges) if scan.range_min < val < scan.range_max)
+        angleClosestDistance = (elementIndex / 2)  
 
-        if front_scan < self.distance_laser:
-            self.msg.linear.x = 0
-            self.msg.angular.z = self.rotation_speed  # Usa la velocidad de rotación reducida
-            rospy.loginfo("Obstacle ahead! Rotating to find a clear path.")
-        elif right_scan < self.distance_laser:
-            self.msg.linear.x = self.forward_speed * self.speed_factor
-            self.msg.linear.y = self.sideways_speed * self.speed_factor
-            rospy.loginfo("Obstacle on the right! Moving left.")
-        elif left_scan < self.distance_laser:
-            self.msg.linear.x = self.forward_speed * self.speed_factor
-            self.msg.linear.y = -self.sideways_speed * self.speed_factor
-            rospy.loginfo("Obstacle on the left! Moving right.")
+        angleClosestDistance= self.__wrapAngle(angleClosestDistance)
+        rospy.loginfo("Degree wraped %5.2f ",(angleClosestDistance))
+        
+        if angleClosestDistance > 0:
+            angleClosestDistance=(angleClosestDistance-180)
         else:
-            self.msg.linear.x = self.forward_speed * self.speed_factor
-            self.msg.linear.y = 0
-            self.msg.angular.z = 0
-            rospy.loginfo("Path clear. Moving forward.")
+            angleClosestDistance=(angleClosestDistance+180)
+            
+        rospy.loginfo("Closest distance of %5.2f m at %5.1f degrees.",closestDistance, angleClosestDistance)
+        
+
+        if closestDistance < self._distanceLaser and -80 < angleClosestDistance < 80:
+            self._msg.linear.x = 0
+            self._msg.linear.y = 0
+            self._msg.angular.z = -self.__sign(angleClosestDistance) * self._rotationSpeed * self._speedFactor
+            rospy.logwarn("Within laser distance threshold. Rotating the robot (z=%4.1f)...", self._msg.angular.z)
+        elif closestDistance < self._distanceLaser and -100 < angleClosestDistance < 100:
+            self._msg.linear.x = 0
+            self._msg.linear.y = -self.__sign(angleClosestDistance) * self._forwardSpeed * self._speedFactor
+            self._msg.angular.z = 0
+        else:
+            self._msg.linear.x = self._forwardSpeed * self._speedFactor
+            self._msg.linear.y = 0
+            self._msg.angular.z = 0
+        
+
+    def __sign(self, val):
+
+        if val >= 0:
+            return 1
+        else:
+            return -1
+
+    def __wrapAngle(self, angle):
+        if 0 <= angle <= 180:
+            return angle
+        else:
+            return angle - 360
 
     def shutdown(self):
-        self.msg.linear.x = 0
-        self.msg.linear.y = 0
-        self.msg.angular.z = 0
-        self.cmd_vel_publisher.publish(self.msg)
-        rospy.loginfo("Stopping the robot")
+        self._msg.linear.x = 0
+        self._msg.linear.y = 0
+        self._msg.angular.z = 0
+        self._cmdVel.publish(self._msg)
+        rospy.loginfo("Stop RVIZ")
 
 if __name__ == '__main__':
     try:
-        robot = rUBotHolonomic()
-        robot.start()
-    except rospy.ROSInterruptException:
-        pass
+        rUBot1 = rUBot()
+        rUBot1.start()
+        rospy.spin()
+        rUBot1.shutdown()
+    except rospy.ROSInterruptException: rUBot1.shutdown()#pass
